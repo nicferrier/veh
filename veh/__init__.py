@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with veh.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.92.0"
+__version__ = "0.93.0"
 
 from cmd import Cmd
 import sys
@@ -216,39 +216,43 @@ FORCE_EASY_INSTALL = [
 def get_config(repo, rev=None):
     """Get the config from the veh root.
 
-Using a specified rev only works on Mercurial repos right now."""
-    if not rev:
-        repo_root = find_root_with_file(".veh.conf", repo)
-        cfgfile = os.path.join(repo_root, '.veh.conf')
-        if not pathexists(cfgfile):
-            raise ConfigMissing(cfgfile)
+    We try and work out what version control system is being used from
+    the location of the veh config file.
 
+    We currently only support Mercurial and GIT.
+
+    The veh.conf MUST exist in the file system though we might read a
+    completly different version of course."""
+
+    repo_root = find_root_with_file(".veh.conf", repo)
+    cfgfile = os.path.join(repo_root, '.veh.conf')
+    if not pathexists(cfgfile):
+        raise ConfigMissing(cfgfile)
+
+    if not rev:
         with open(cfgfile) as fd:
             cfg = ConfigParser()
             cfg.readfp(fd, '.veh.conf')
-
         return cfg
     else:
-        # This obviously needs fixing to be DVCS agnostic
-
-        from mercurial import hg, ui, error
-        # NOTE: rev = None in the mercurial api will give you the working dir.
-        u = ui.ui()
-        try:
-            repo = hg.repository(u, repo)
-        except error.RepoError as e:
-            # repo not found
-            raise
-        try:
-            cfgdata = repo[rev]['.veh.conf'].data()
-        except error.RepoLookupError as e:
-            # revision not found
-            raise
-        except error.LookupError as e:
-            # config not found
-            cfgfile = os.path.join(repo.root, '.veh.conf')
+        # FIXME: Moar DVCS! Moar!
+        repo_command = None
+        if pathexists(os.path.join(repo_root, ".git")):
+            repo_command = "git show %(rev)s:%(path)s" % {
+                "rev": rev,
+                "path": path
+                }
+        elif pathexists(os.path.join(repo_root, ".hg")):
+            repo_command = "hg cat -r %(rev)s %(path)s" % {
+                "rev": rev,
+                "path": path
+                }
+        
+        if repo_command:
+            # FIXE we need to mark that this is a verion problem?
             raise ConfigMissing(cfgfile)
 
+        cfgdata = subprocess.check_output(repo_command.split(" "))
         cfg = ConfigParser()
         cfg.readfp(StringIO(cfgdata), '.veh.conf')
         return cfg

@@ -1,4 +1,9 @@
-import mercurial.node
+
+mercurial_available = True
+try:
+    import mercurial.node
+except ImportError:
+    mercurial_available = False
 
 CFN = '.veh.conf'
 
@@ -12,6 +17,9 @@ def warn_changes(ui, repo, hooktype, **kwargs):
     preupdate.veh=python:veh.hooks.warn_changes
 
     """
+    if not mercurial_available:
+        raise Exception("No mercurial installed here")
+
     try:
         if hooktype == 'changegroup':
             warning = "WARNING: .veh.conf has been modified in changesets.\n"
@@ -48,5 +56,5 @@ def warn_changes(ui, repo, hooktype, **kwargs):
                     ui.warn('WARNING: update removing .veh.conf\n')
                 elif CFN in parent and CFN not in wd:
                     ui.warn('WARNING: update adding .veh.conf\n')
-    except Exception, e:
+    except Exception as e:
         ui.error('whoops! %s' % e)

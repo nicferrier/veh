@@ -23,7 +23,7 @@ setup(
     download_url="http://github.com/nicferrier/veh/downloads",
     platforms = ["any"],
     packages=['veh'],
-    install_requires=['pip', 'virtualenv', 'Mercurial'],
+    install_requires=['pip', 'virtualenv'],
     entry_points = {
        'console_scripts': [
             'veh = veh:main'
