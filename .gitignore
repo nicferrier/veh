@@ -8,3 +8,4 @@ dist
 *.bak
 __pycache__
 .#*
+build
