@@ -31,7 +31,7 @@ It performs the following:
   paths from the old environment present.
 
 """
-from __future__ import with_statement
+
 import logging
 import os
 import shutil
@@ -80,7 +80,7 @@ def _virtualenv_sys(venv_path):
     stdout, err = p.communicate()
     assert not p.returncode and stdout
     lines = stdout.splitlines()
-    return lines[0], filter(bool, lines[1:])
+    return lines[0], list(filter(bool, lines[1:]))
 
 
 def clone_virtualenv(src_dir, dst_dir):
@@ -105,7 +105,7 @@ def clone_virtualenv(src_dir, dst_dir):
 
 def fixup_scripts(old_dir, new_dir, version, rewrite_env_python=False):
     bin_dir = os.path.join(new_dir, 'bin')
-    root, dirs, files = os.walk(bin_dir).next()
+    root, dirs, files = next(os.walk(bin_dir))
     for file_ in files:
         if file_ == 'activate':
             fixup_activate(os.path.join(root, file_), old_dir, new_dir)
@@ -192,7 +192,7 @@ def fixup_syspath_items(syspath, old_dir, new_dir):
                 continue
         elif not _dirmatch(path, new_dir):
             continue
-        root, dirs, files = os.walk(path).next()
+        root, dirs, files = next(os.walk(path))
         for file_ in files:
             filename = os.path.join(root, file_)
             if filename.endswith('.pth'):

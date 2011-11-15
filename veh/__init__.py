@@ -16,17 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with veh.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import with_statement
+
 __version__ = "0.88"
 
 from cmd import Cmd
 import sys
 import os
-from ConfigParser import ConfigParser, NoSectionError, NoOptionError
+from configparser import ConfigParser, NoSectionError, NoOptionError
 from os.path import exists as pathexists
 from os.path import splitext
 from os.path import expanduser
-from StringIO import StringIO
+from io import StringIO
 from subprocess import Popen
 from subprocess import PIPE
 import tempfile
@@ -98,7 +98,7 @@ def _get_inactive_venvs(repo):
     venvdir = os.path.join(repo, VENV_DIR)
     try:
         dirs = os.walk(venvdir).next()[1]
-    except StopIteration, e:
+    except StopIteration as e:
         return []
     activevenv = _get_active_venv(repo)
     if activevenv:
@@ -116,10 +116,10 @@ def make_venv(repo):
     _popencmd(["virtualenv", "--no-site-packages", venvpath])
     with open("%s/.startup_rc" % venvpath, "w") as out:
         try:
-            f = filter(os.path.exists, map(expanduser, ['~/.bashrc', '~/.bash_profile']))
+            f = list(filter(os.path.exists, list(map(expanduser, ['~/.bashrc', '~/.bash_profile']))))
             f = f[0] if f else None
-            print >>out, "source %s\nsource %s\n" % (
-                f, "%s/bin/activate" % venvpath)
+            print("source %s\nsource %s\n" % (
+                f, "%s/bin/activate" % venvpath), file=out)
         except:
             pass
     _mark_venv_active(repo, venvpath)
@@ -173,7 +173,7 @@ def _venvsh(root, venvdir, shellcommand=None, pipe=False):
         command += ["-c", shellcommand]
 
     if _verbose:
-        print >>sys.stderr,  "running %s inside the venv %s in %s" % (command, venvdir, root)
+        print("running %s inside the venv %s in %s" % (command, venvdir, root), file=sys.stderr)
 
     return _popencmd(command, env=env, pipe=pipe)
 
@@ -197,15 +197,15 @@ def get_config(repo, rev=None):
     u = ui.ui()
     try:
         repo = hg.repository(u, repo)
-    except error.RepoError, e:
+    except error.RepoError as e:
         # repo not found
         raise
     try:
         cfgdata = repo[rev]['.veh.conf'].data()
-    except error.RepoLookupError, e:
+    except error.RepoLookupError as e:
         # revision not found
         raise
-    except error.LookupError, e:
+    except error.LookupError as e:
         # config not found
         cfgfile = os.path.join(repo.root, '.veh.conf')
         raise ConfigMissing(cfgfile)
@@ -288,7 +288,7 @@ def fill_venv(repo, cfg=None):
                     if not pathexists(cachedir):
                         os.mkdir(cachedir)
                 except:
-                    print >>sys.stderr, "%s does not exist but cannot be created" % cachedir
+                    print("%s does not exist but cannot be created" % cachedir, file=sys.stderr)
                 else:
                     cmd += " --download-cache=%s" % cachedir
 
@@ -320,17 +320,17 @@ def edit_file(filename):
             with open(filename) as srcfd:
                 data = srcfd.read()
 
-        print os.write(fd, data)
+        print(os.write(fd, data))
         os.close(fd)
-    except Exception, e:
-        print >>sys.stderr, "problem making temp file: " + str(e)
+    except Exception as e:
+        print("problem making temp file: " + str(e), file=sys.stderr)
     else:
         editor = os.environ.get("VISUAL", os.environ.get("EDITOR", "editor"))
         try:
             p = Popen([editor, tempfilename])
             p.wait()
-        except Exception, e:
-            print >>sys.stderr, "problem running editor"
+        except Exception as e:
+            print("problem running editor", file=sys.stderr)
         else:
             # Copy the temp file in
             if pathexists(filename):
@@ -395,7 +395,7 @@ def edit(repo):
     if pathexists(cfgfile):
         edit_file(cfgfile)
     else:
-        print >>sys.stderr, "%s does not exist" % cfgfile
+        print("%s does not exist" % cfgfile, file=sys.stderr)
 
 
 class SysArgsCmd(Cmd):
@@ -420,7 +420,7 @@ class VehCmd(SysArgsCmd):
     repo = None
 
     def __init__(self, **kwargs):
-        from StringIO import StringIO
+        from io import StringIO
         Cmd.__init__(self, StringIO())
         self.opts = kwargs
         global _verbose
@@ -461,7 +461,7 @@ Opens VISUAL or EDITOR or /usr/bin/edit on your repositorys config file.
         root = self._getroot()
         vehenv = _get_active_venv(root)
         if vehenv and pathexists(vehenv):
-            print root
+            print(root)
         else:
             return 1
 
@@ -471,7 +471,7 @@ Opens VISUAL or EDITOR or /usr/bin/edit on your repositorys config file.
         root = self._getroot()
         cfg = get_config(root)
         for p in cfg.items("packages"):
-            print "%s %s" % p
+            print("%s %s" % p)
 
     def do_active(self, arg):
         """Is the virtualenv active? print the path if it is."""
@@ -480,7 +480,7 @@ Opens VISUAL or EDITOR or /usr/bin/edit on your repositorys config file.
         active = _get_active_venv(root)
 
         if active and venv and os.path.abspath(venv) == os.path.abspath(active):
-            print venv
+            print(venv)
         else:
             return 1
 
@@ -503,7 +503,7 @@ affected at all."""
             deleteold = False  # default value
             try:
                 deleteold = cfg.getboolean('veh', 'delete-on-rebuild')
-            except (NoSectionError, NoOptionError), e:
+            except (NoSectionError, NoOptionError) as e:
                 pass
             if deleteold:
                 _rm_r(active)
@@ -592,23 +592,23 @@ will NOT run ipython in the virtualenv.
         root = self._getroot()
         active = _get_active_venv(root)
         if not active:
-            print >> sys.stdout, "no active venv to clone"
+            print("no active venv to clone", file=sys.stdout)
             sys.exit(1)
         newvenv = _new_venv_path(root)
         try:
             clone.clone_virtualenv(active, newvenv)
-        except Exception, e:
+        except Exception as e:
             if os.path.exists(newvenv):
                 _rm_r(newvenv)
-            print >> sys.stdout, "cloning active virtualenv failed"
+            print("cloning active virtualenv failed", file=sys.stdout)
             sys.exit(1)
 
         # Now rewrite the startup rc file
         with open("%s/.startup_rc" % newvenv, "w") as out:
-            print >>out, "source %s\nsource %s\n" % (
+            print("source %s\nsource %s\n" % (
                 expanduser("~/.bashrc"),
                 "%s/bin/activate" % newvenv
-                )
+                ), file=out)
 
         # ... and finally mark it as the active one
         _mark_venv_active(root, newvenv)
@@ -642,7 +642,7 @@ def main():
 
     # Print the version if necessary
     if o.__dict__["version"]:
-        print __version__
+        print(__version__)
         sys.exit(0)
 
     # Make the processor
@@ -652,7 +652,7 @@ def main():
     try:
         ret = cmdproc.onecmd(a)
     except IndexError:
-        print >>sys.stderr, "not enough arguments. Ask for help ?"
+        print("not enough arguments. Ask for help ?", file=sys.stderr)
     else:
         if ret:
             sys.exit(ret)
