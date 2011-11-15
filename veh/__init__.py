@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with veh.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.91.0"
+__version__ = "0.92.0"
 
 from cmd import Cmd
 import sys
@@ -137,7 +137,7 @@ def make_venv(repo):
 def write_startup_rc(venvpath):
     with open("%s/.startup_rc" % venvpath, "w") as out:
         if sys.platform != 'darwin' and os.path.exists(expanduser("~/.bashrc")):
-            print("source %s\n" % expanduser("~/.bashrc", file=out)
+            print("source %s\n" % expanduser("~/.bashrc"), file=out)
         elif sys.platform == 'darwin' and os.path.exists(expanduser("~/.bash_profile")):
             print("source %s\n" % expanduser("~/.bash_profile"), file=out)
         print("source %s\n" % ("%s/bin/activate" % venvpath), file=out)
@@ -236,7 +236,7 @@ Using a specified rev only works on Mercurial repos right now."""
         u = ui.ui()
         try:
             repo = hg.repository(u, repo)
-        except error.RepoError, e:
+        except error.RepoError as e:
             # repo not found
             raise
         try:
