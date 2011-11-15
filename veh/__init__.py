@@ -17,7 +17,7 @@
 # along with veh.  If not, see <http://www.gnu.org/licenses/>.
 
 
-__version__ = "0.88"
+__version__ = "0.89"
 
 from cmd import Cmd
 import sys
