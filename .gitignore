@@ -1,0 +1,10 @@
+.*~
+.*\.pyc$
+#.*$
+.#.*$
+*~
+dist
+*.egg-info
+*.bak
+__pycache__
+.#*
